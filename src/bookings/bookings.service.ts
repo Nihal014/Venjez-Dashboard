@@ -14,18 +14,62 @@ export class BookingsService {
   ) {}
 
   create(create_booking_dto: CreateBookingDto) {
-    const booking =
-      this.booking_repository.create(create_booking_dto);
+    const booking = this.booking_repository.create(create_booking_dto);
 
     return this.booking_repository.save(booking);
   }
 
-  findAll() {
-    return this.booking_repository.find({
-      order: {
-        created_at: 'DESC',
-      },
-    });
+  async findAll(filters: {
+    key?: string;
+    status?: string;
+    from_date?: string;
+    to_date?: string;
+  }) {
+    const query = this.booking_repository.createQueryBuilder('booking');
+
+    if (filters.key) {
+      query.andWhere(
+        `
+      (
+        LOWER(booking.customer_name)
+        LIKE LOWER(:customer_name)
+
+        OR
+
+        booking.id::text
+        LIKE :booking_id
+      )
+      `,
+        {
+          customer_name: `%${filters.key}%`,
+          booking_id: `%${filters.key}%`,
+        },
+      );
+    }
+
+    if (filters.status) {
+      query.andWhere('booking.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters.from_date && filters.to_date) {
+      query.andWhere(
+        `
+      booking.event_date
+      BETWEEN :from_date
+      AND :to_date
+      `,
+        {
+          from_date: filters.from_date,
+          to_date: filters.to_date,
+        },
+      );
+    }
+
+    query.orderBy('booking.created_at', 'DESC');
+
+    return query.getMany();
   }
 
   findOne(id: number) {
@@ -34,14 +78,8 @@ export class BookingsService {
     });
   }
 
-  async update(
-    id: number,
-    update_booking_dto: UpdateBookingDto,
-  ) {
-    await this.booking_repository.update(
-      id,
-      update_booking_dto,
-    );
+  async update(id: number, update_booking_dto: UpdateBookingDto) {
+    await this.booking_repository.update(id, update_booking_dto);
 
     return this.findOne(id);
   }

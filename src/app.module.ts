@@ -13,8 +13,8 @@ import { BookingsModule } from './bookings/bookings.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      autoLoadEntities: true,
-      synchronize: true,
+      autoLoadEntities: true,  //Normally you would have to register every entity manually. Without autoLoadEntities:entities: [Venue, Customer],With:autoLoadEntities: trueNest automatically finds all entities imported through TypeOrmModule.forFeature().
+      synchronize: true,   //
     }),
     BookingsModule,
   ],
